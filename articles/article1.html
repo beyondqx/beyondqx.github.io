@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,27 +14,46 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
+
         .container {
             background: white;
             padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        h1 { color: #333; }
-        h2 { color: #555; margin-top: 30px; }
-        .meta { color: #888; font-size: 14px; margin-bottom: 20px; }
+
+        h1 {
+            color: #333;
+        }
+
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+
+        .meta {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
         .back-link {
             display: inline-block;
             margin-bottom: 20px;
             color: #0066cc;
             text-decoration: none;
         }
-        .back-link:hover { text-decoration: underline; }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
         code {
             background: #f4f4f4;
             padding: 2px 6px;
             border-radius: 3px;
         }
+
         pre {
             background: #2d2d2d;
             color: #f8f8f2;
@@ -43,17 +63,43 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <a href="../index.html" class="back-link">← 返回首页</a>
-        <h1>我的第一篇文章</h1>
+        <h1>在 Windows 里原生安装 openclaw</h1>
         <p class="meta">发表于 2026 年 3 月 10 日</p>
-        
+
         <h2>引言</h2>
-        <p>这是我的博客文章示例。你可以在这里写任何你想分享的内容。</p>
-        
+        <p>以下是详细步骤</p>
+
         <h2>正文</h2>
-        <p>开始写作吧！你可以使用 HTML 标签来格式化你的文章，比如：</p>
+        <p>安装winget
+            1.信任 PSGallery 仓库：
+            Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+            2.安装脚本：
+            Install-Script -Name winget-install -Force
+            3.运行脚本安装 Winget：
+            winget-install
+            插曲：如果powershell受限，运行Set-ExecutionPolicy RemoteSigned
+            系统会提示确认，输入Y并按Enter
+            4.验证
+            winget --version
+
+            1: 安装最新 LTS 版的 Node.js（v24.x，目前的最新 LTS 版）
+            在 PowerShell 或命令提示符（CMD）中运行以下命令（以管理员身份打开）：
+            winget install -e --id OpenJS.NodeJS.LTS
+            2.安装后，重启PowerShell，验证版本：
+            node -v
+            3.安装 Git：
+            winget install --id Git.Git -e --source winget
+            重启PowerShell，验证 Git
+            git --version
+            4.安装 OpenClaw
+            在 PowerShell/CMD 或 WSL 终端中运行：
+            npm install -g openclaw@latest
+            5.验证：
+            openclaw --version</p>
         <ul>
             <li><strong>加粗文字</strong></li>
             <li><em>斜体文字</em></li>
@@ -61,4 +107,5 @@
         </ul>
     </div>
 </body>
+
 </html>
