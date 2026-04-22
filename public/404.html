@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <title>beyondqx 的博客</title>
+    <script>
+      // 单页应用路由重定向
+      var path = window.location.pathname.substr(1);
+      var search = window.location.search;
+      var hash = window.location.hash;
+      var redirect = path + search + hash;
+      var base = '/beyondqx.github.io';
+      
+      // 如果不是根路径，则重定向到带 hash 的 URL
+      if (path !== '' && !path.startsWith('#/')) {
+        window.location.replace(base + '/#' + path + search + hash);
+      } else {
+        window.location.replace(base + '/' + search + hash);
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>请启用 JavaScript 以访问此网站。</noscript>
+  </body>
+</html>

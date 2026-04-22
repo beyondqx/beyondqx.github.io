@@ -1,0 +1,53 @@
+{
+  "name": "beyondqx-blog",
+  "version": "1.0.0",
+  "description": "beyondqx 的精美博客网站",
+  "private": true,
+  "homepage": "https://beyondqx.github.io",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "new-article": "node scripts/new-article.js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beyondqx/beyondqx.github.io.git"
+  },
+  "keywords": ["blog", "react", "markdown"],
+  "author": "beyondqx",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/beyondqx/beyondqx.github.io/issues"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "highlight.js": "^11.9.0",
+    "marked": "^9.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^3.5.0"
+  },
+  "devDependencies": {
+    "ajv": "^8.12.0",
+    "ajv-keywords": "^5.1.0",
+    "gh-pages": "^6.1.0"
+  }
+}
