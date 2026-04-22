@@ -1,23 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getArticleBySlug, getArticles } from '../utils/data';
-import { markdownToHtml } from '../utils/markdown';
+import { useArticle } from '../hooks/useArticles';
+import CommentSection from '../components/CommentSection';
 
 function ArticlePage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-
-  const article = useMemo(() => getArticleBySlug(slug), [slug]);
-
-  useEffect(() => {
-    if (!article) {
-      setLoading(false);
-    } else {
-      setLoading(false);
-      window.scrollTo(0, 0);
-    }
-  }, [article]);
+  const { article, loading, error } = useArticle(slug);
 
   if (loading) {
     return (
@@ -27,13 +16,13 @@ function ArticlePage() {
     );
   }
 
-  if (!article) {
+  if (error || !article) {
     return (
       <div className="container" style={{ paddingTop: 100 }}>
         <div className="empty-state">
           <span className="material-icons">draft</span>
           <h2>文章不存在</h2>
-          <p>这篇文章可能已被删除或尚未发布</p>
+          <p>{error || '这篇文章可能已被删除'}</p>
           <button className="admin-btn" onClick={() => navigate('/')}>
             返回首页
           </button>
@@ -41,15 +30,6 @@ function ArticlePage() {
       </div>
     );
   }
-
-  const htmlContent = markdownToHtml(article.content);
-
-  const relatedArticles = getArticles()
-    .filter(a => 
-      a.id !== article.id && 
-      a.category === article.category
-    )
-    .slice(0, 3);
 
   return (
     <div className="container" style={{ paddingTop: 40 }}>
@@ -59,31 +39,34 @@ function ArticlePage() {
           <h1 className="article-title">{article.title}</h1>
           <div className="article-meta">
             <span>
-              <span className="material-icons" style={{ verticalAlign: 'middle' }}>calendar_today</span>
-              {new Date(article.createdAt).toLocaleDateString('zh-CN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
+              <img 
+                src={article.authorAvatar} 
+                alt={article.author}
+                style={{ width: 24, height: 24, borderRadius: '50%', marginRight: 6 }}
+              />
+              {article.author}
             </span>
             <span>
-              <span className="material-icons" style={{ verticalAlign: 'middle' }}>schedule</span>
-              阅读时间：约 {article.readTime || 5} 分钟
+              <span className="material-icons">calendar_today</span>
+              {new Date(article.createdAt).toLocaleDateString('zh-CN')}
+            </span>
+            <span>
+              <span className="material-icons">schedule</span>
+              {article.readTime} 分钟
             </span>
           </div>
         </header>
-
+        
         <div 
           className="article-content"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
+          dangerouslySetInnerHTML={{ __html: article.contentHtml || article.content }}
         />
-
-        {/* Tags */}
-        {article.tags && article.tags.length > 0 && (
-          <div className="tags-section" style={{ background: 'transparent', paddingTop: 20 }}>
-            <div className="tags-container">
-              {article.tags.map((tag, index) => (
-                <span key={index} className="tag-pill">
+        
+        {article.tags?.length > 0 && (
+          <div className="tags-section" style={{ background: 'transparent', marginTop: 32 }}>
+            <div className="tags-container" style={{ justifyContent: 'flex-start' }}>
+              {article.tags.map(tag => (
+                <span key={tag} className="tag-pill">
                   <span className="material-icons">tag</span>
                   {tag}
                 </span>
@@ -91,32 +74,11 @@ function ArticlePage() {
             </div>
           </div>
         )}
-
-        {/* Related Articles */}
-        {relatedArticles.length > 0 && (
-          <section style={{ marginTop: 60 }}>
-            <h3 style={{ marginBottom: 24, fontSize: 1.5 }}>相关文章</h3>
-            <div className="articles-grid">
-              {relatedArticles.map(relatedArticle => (
-                <div 
-                  key={relatedArticle.id}
-                  className="article-card"
-                  onClick={() => navigate(`/article/${relatedArticle.slug}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="article-card-image" style={{ height: 150 }}>
-                    <span className="article-card-category">{relatedArticle.category}</span>
-                  </div>
-                  <div className="article-card-content">
-                    <h4 className="article-card-title" style={{ fontSize: 1.1 }}>
-                      {relatedArticle.title}
-                    </h4>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        
+        <CommentSection 
+          articleNumber={parseInt(slug)}
+          comments={article.comments}
+        />
       </article>
     </div>
   );

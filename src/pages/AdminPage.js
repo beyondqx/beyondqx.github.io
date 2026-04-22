@@ -1,55 +1,145 @@
-import React, { useState, useMemo } from 'react';
-import { getArticles, getSiteConfig } from '../utils/data';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useArticles } from '../hooks/useArticles';
+import { createDiscussion, updateDiscussion, deleteDiscussion, updateLabels } from '../services/githubApi';
+import { fetchCategories } from '../services/graphql';
+import { articleToDiscussion } from '../utils/articleUtils';
+import { DISCUSSION_CONFIG } from '../config';
+import ArticleForm from '../components/ArticleForm';
 
 function AdminPage() {
-  const [activeTab, setActiveTab] = useState('articles');
-  const articles = useMemo(() => getArticles(), []);
-  const config = getSiteConfig();
+  const navigate = useNavigate();
+  const { isLoggedIn, isOwner, token } = useAuth();
+  const { articles, loading, refetch } = useArticles({ first: 50, publishedOnly: false });
+  const [showForm, setShowForm] = useState(false);
+  const [editingArticle, setEditingArticle] = useState(null);
+  const [categoryId, setCategoryId] = useState(null);
 
-  const tabs = [
-    { id: 'articles', label: '文章管理', icon: 'article' },
-    { id: 'settings', label: '站点设置', icon: 'settings' },
-    { id: 'deploy', label: '部署指南', icon: 'cloud_upload' }
-  ];
+  useEffect(() => {
+    async function loadCategoryId() {
+      const categories = await fetchCategories(token);
+      const blogCategory = categories.find(c => c.name === DISCUSSION_CONFIG.CATEGORY_NAME);
+      if (blogCategory) {
+        setCategoryId(blogCategory.id);
+      }
+    }
+    loadCategoryId();
+  }, [token]);
+
+  if (!isLoggedIn) {
+    return (
+      <div className="container" style={{ paddingTop: 100 }}>
+        <div className="empty-state">
+          <span className="material-icons">lock</span>
+          <h2>需要登录</h2>
+          <p>请先登录才能访问管理后台</p>
+          <button className="admin-btn" onClick={() => navigate('/login')}>
+            前往登录
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isOwner) {
+    return (
+      <div className="container" style={{ paddingTop: 100 }}>
+        <div className="empty-state">
+          <span className="material-icons">admin_panel_settings</span>
+          <h2>权限不足</h2>
+          <p>只有博主才能管理文章</p>
+          <button className="admin-btn" onClick={() => navigate('/')}>
+            返回首页
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleCreate = async (data) => {
+    if (!categoryId) {
+      alert('未找到博客分类，请先在 GitHub 启用 Discussions 并创建「博客文章」分类');
+      return;
+    }
+    const discussionData = articleToDiscussion(data);
+    await createDiscussion(data.title, data.content, categoryId, discussionData.labels, token);
+    setShowForm(false);
+    refetch();
+    alert('文章发布成功！');
+  };
+
+  const handleUpdate = async (data) => {
+    await updateDiscussion(editingArticle.id, data.title, data.content, token);
+    const discussionData = articleToDiscussion(data);
+    await updateLabels(editingArticle.id, discussionData.labels, token);
+    setEditingArticle(null);
+    setShowForm(false);
+    refetch();
+    alert('文章更新成功！');
+  };
+
+  const handleDelete = async (number) => {
+    if (!window.confirm('确定要删除这篇文章吗？')) return;
+    await deleteDiscussion(number, token);
+    refetch();
+    alert('文章已删除');
+  };
+
+  const handleTogglePublish = async (article) => {
+    const newLabels = article.published
+      ? article.tags?.concat([DISCUSSION_CONFIG.LABELS.DRAFT]) || [DISCUSSION_CONFIG.LABELS.DRAFT]
+      : article.tags?.concat([DISCUSSION_CONFIG.LABELS.PUBLISHED]) || [DISCUSSION_CONFIG.LABELS.PUBLISHED];
+    
+    const filteredLabels = newLabels.filter(l => 
+      l !== (article.published ? DISCUSSION_CONFIG.LABELS.PUBLISHED : DISCUSSION_CONFIG.LABELS.DRAFT)
+    );
+    
+    await updateLabels(article.id, filteredLabels, token);
+    refetch();
+  };
+
+  if (showForm) {
+    return (
+      <div className="container" style={{ paddingTop: 40 }}>
+        <div className="article-page">
+          <h2 style={{ marginBottom: 24 }}>
+            {editingArticle ? '编辑文章' : '新建文章'}
+          </h2>
+          <ArticleForm
+            initialData={editingArticle}
+            onSubmit={editingArticle ? handleUpdate : handleCreate}
+            onCancel={() => { setShowForm(false); setEditingArticle(null); }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-page fade-in">
       <header className="admin-header">
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>
-          <span className="material-icons" style={{ verticalAlign: 'middle', marginRight: 8 }}>dashboard</span>
+        <h1>
+          <span className="material-icons" style={{ marginRight: 8 }}>dashboard</span>
           管理后台
         </h1>
-        <button className="admin-btn" onClick={() => window.open('https://github.com/beyondqx/beyondqx.github.io', '_blank')}>
-          <span className="material-icons">open_in_new</span>
-          GitHub 仓库
+        <button className="admin-btn" onClick={() => setShowForm(true)}>
+          <span className="material-icons">add</span>
+          新建文章
         </button>
       </header>
 
-      {/* Tabs */}
-      <div className="nav nav-tabs" style={{ marginBottom: 24, borderBottom: '2px solid var(--border-color)' }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`nav-link ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '12px 24px',
-              color: activeTab === tab.id ? 'var(--primary-color)' : 'var(--text-secondary)',
-              borderBottom: activeTab === tab.id ? '2px solid var(--primary-color)' : 'none',
-              marginBottom: -2
-            }}
-          >
-            <span className="material-icons" style={{ marginRight: 8, verticalAlign: 'middle' }}>{tab.icon}</span>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {!categoryId && (
+        <div style={{ padding: 16, background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 16 }}>
+          <p style={{ color: 'orange' }}>
+            ⚠️ 未检测到「博客文章」分类，请前往 GitHub Discussions 创建该分类
+          </p>
+        </div>
+      )}
 
-      {/* Articles Tab */}
-      {activeTab === 'articles' && (
+      {loading ? (
+        <div className="loading"><div className="spinner"></div></div>
+      ) : (
         <div className="admin-table">
           <table>
             <thead>
@@ -57,135 +147,41 @@ function AdminPage() {
                 <th>标题</th>
                 <th>分类</th>
                 <th>状态</th>
-                <th>创建时间</th>
+                <th>时间</th>
                 <th>操作</th>
               </tr>
             </thead>
             <tbody>
               {articles.map(article => (
                 <tr key={article.id}>
+                  <td><strong>{article.title}</strong></td>
                   <td>
-                    <strong>{article.title}</strong>
-                  </td>
-                  <td>
-                    <span className="badge" style={{
+                    <span style={{
                       background: 'var(--primary-color)',
                       color: 'white',
                       padding: '4px 12px',
                       borderRadius: 20,
-                      fontSize: 12
+                      fontSize: 12,
                     }}>
                       {article.category}
                     </span>
                   </td>
-                  <td>
-                    <span style={{ color: article.published ? 'green' : 'orange' }}>
-                      {article.published ? '已发布' : '草稿'}
-                    </span>
+                  <td style={{ color: article.published ? 'green' : 'orange' }}>
+                    {article.published ? '已发布' : '草稿'}
                   </td>
                   <td>{new Date(article.createdAt).toLocaleDateString('zh-CN')}</td>
                   <td>
-                    <button 
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => window.open(`/article/${article.slug}`, '_blank')}
-                    >
-                      查看
+                    <button onClick={() => navigate(`/article/${article.id}`)} style={{ marginRight: 8, padding: 4, border: '1px solid var(--border-color)', borderRadius: 4, cursor: 'pointer' }}>查看</button>
+                    <button onClick={() => { setEditingArticle(article); setShowForm(true); }} style={{ marginRight: 8, padding: 4, border: '1px solid var(--border-color)', borderRadius: 4, cursor: 'pointer' }}>编辑</button>
+                    <button onClick={() => handleTogglePublish(article)} style={{ marginRight: 8, padding: 4, border: '1px solid var(--border-color)', borderRadius: 4, cursor: 'pointer' }}>
+                      {article.published ? '转草稿' : '发布'}
                     </button>
+                    <button onClick={() => handleDelete(article.id)} style={{ padding: 4, color: 'red', border: '1px solid red', borderRadius: 4, cursor: 'pointer' }}>删除</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Settings Tab */}
-      {activeTab === 'settings' && (
-        <div className="admin-table" style={{ padding: 24 }}>
-          <h3>站点信息</h3>
-          <div className="mb-3" style={{ marginTop: 16 }}>
-            <label className="form-label">博客标题</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              defaultValue={config.title}
-              readOnly
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">副标题</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              defaultValue={config.subtitle}
-              readOnly
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">作者</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              defaultValue={config.author}
-              readOnly
-            />
-          </div>
-          <div className="alert alert-info" style={{ marginTop: 16 }}>
-            <span className="material-icons" style={{ verticalAlign: 'middle', marginRight: 8 }}>info</span>
-            要修改站点配置，请编辑 <code>src/utils/data.js</code> 文件中的 <code>siteConfig</code> 对象。
-          </div>
-        </div>
-      )}
-
-      {/* Deploy Tab */}
-      {activeTab === 'deploy' && (
-        <div className="admin-table" style={{ padding: 24 }}>
-          <h3>部署指南</h3>
-          
-          <div style={{ marginTop: 24 }}>
-            <h5>方式一：GitHub Actions 自动部署（推荐）</h5>
-            <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>
-              每次推送到 main 分支时，GitHub Actions 会自动构建并部署到 GitHub Pages。
-            </p>
-            <pre style={{ 
-              background: '#1a1a2e', 
-              padding: 16, 
-              borderRadius: 8, 
-              color: '#f8f8f2',
-              marginTop: 12
-            }}>
-{`# 本地提交并推送
-git add .
-git commit -m "更新博客内容"
-git push origin main`}
-            </pre>
-          </div>
-
-          <div style={{ marginTop: 32 }}>
-            <h5>方式二：手动构建部署</h5>
-            <pre style={{ 
-              background: '#1a1a2e', 
-              padding: 16, 
-              borderRadius: 8, 
-              color: '#f8f8f2',
-              marginTop: 12
-            }}>
-{`# 安装依赖
-npm install
-
-# 构建生产版本
-npm run build
-
-# 将 build 目录内容推送到 gh-pages 分支
-# （可以使用 gh-pages 包自动化此过程）`}
-            </pre>
-          </div>
-
-          <div className="alert alert-warning" style={{ marginTop: 24 }}>
-            <span className="material-icons" style={{ verticalAlign: 'middle', marginRight: 8 }}>warning</span>
-            <strong>注意：</strong> 本博客是纯静态网站，所有数据在构建时生成。
-            如需添加新文章，请创建 Markdown 文件并更新 <code>src/utils/data.js</code>。
-          </div>
         </div>
       )}
     </div>
