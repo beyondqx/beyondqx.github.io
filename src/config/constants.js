@@ -10,7 +10,7 @@ export const GITHUB_CONFIG = {
 };
 
 export const DISCUSSION_CONFIG = {
-  CATEGORY_NAME: '博客文章',
+  CATEGORY_NAME: 'Announcements',
   LABELS: {
     PUBLISHED: 'published',
     DRAFT: 'draft',

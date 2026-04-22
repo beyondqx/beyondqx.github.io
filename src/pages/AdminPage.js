@@ -59,7 +59,7 @@ function AdminPage() {
 
   const handleCreate = async (data) => {
     if (!categoryId) {
-      alert('未找到博客分类，请先在 GitHub 启用 Discussions 并创建「博客文章」分类');
+      alert('未找到博客分类，请先在 GitHub 启用 Discussions 并确保 Announcements 分类存在');
       return;
     }
     const discussionData = articleToDiscussion(data);
@@ -132,7 +132,7 @@ function AdminPage() {
       {!categoryId && (
         <div style={{ padding: 16, background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 16 }}>
           <p style={{ color: 'orange' }}>
-            ⚠️ 未检测到「博客文章」分类，请前往 GitHub Discussions 创建该分类
+            ⚠️ 未检测到「Announcements」分类，请前往 GitHub Discussions 查看分类设置
           </p>
         </div>
       )}

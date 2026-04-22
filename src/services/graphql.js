@@ -51,7 +51,7 @@ export const GET_ARTICLES_QUERY = `
           }
         }
       }
-      discussionCategory(name: "博客文章") {
+      discussionCategory(name: "Announcements") {
         id
         name
       }

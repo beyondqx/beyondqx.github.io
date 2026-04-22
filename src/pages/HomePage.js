@@ -34,7 +34,7 @@ function HomePage() {
           <span className="material-icons">error_outline</span>
           <p>{error}</p>
           <p style={{ marginTop: 8, color: 'var(--text-tertiary)' }}>
-            请确保 GitHub Discussions 已启用并创建「博客文章」分类
+            请确保 GitHub Discussions 已启用
           </p>
         </div>
       </div>
