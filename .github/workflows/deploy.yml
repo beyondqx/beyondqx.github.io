@@ -35,6 +35,7 @@ jobs:
         run: npm run build
         env:
           CI: false
+          REACT_APP_GITHUB_CLIENT_ID: Ov23lijI1QUmfwSoek5d
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
